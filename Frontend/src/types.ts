@@ -6,10 +6,10 @@ export enum TaskStatus {
 }
 
 export type Task = {
-  id: string
+  id?: string
   person: string
   date: string
-  description: string
-  status: TaskStatus
+  description?: string
+  status?: TaskStatus
 }
 

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { Calendar } from "./components/ui/Calendar";
+// import { Calendar } from "./components/ui/Calendar";
+
 import { Button } from "./components/ui/button";
 import { PlusCircle, CheckCircle, Circle, MinusCircle } from "lucide-react";
 //import { getTasks, updateTaskStatus } from "./app/actions"
@@ -8,6 +9,12 @@ import { format } from "date-fns";
 import { TaskModal } from "./components/TaskModel";
 import { type Task, TaskStatus } from "./types";
 import "./index.css";
+
+
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+
 
 // Team members
 const teamMembers = ["Komal", "Ankush", "Animesh", "Ashvini", "Nasar"];
@@ -111,17 +118,23 @@ export default function App() {
   };
 
   return (
-    <div className="container mx-auto py-8 overflow-y-scroll">
+    <div className="container h-full mx-auto py-8 overflow-y-scroll">
       <h1 className="text-3xl font-bold mb-6">OpsBee Dashboard</h1>
 
       <div className="flex flex-col md:flex-row gap-6 mb-8">
         <div className="border rounded-md p-4">
-          <Calendar
+          {/* <Calendar
             mode="single"
             selected={date}
             onSelect={(newDate) => newDate && setDate(newDate)}
-            className="rounded-md"
-          />
+            className="rounded-md "
+          /> */}
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DateCalendar
+              // value={date}
+              onChange={(newDate) => newDate && setDate(newDate)}
+            />
+          </LocalizationProvider>
         </div>
 
         <div className="flex-1">
@@ -207,12 +220,16 @@ export default function App() {
       </div>
 
       {isModalOpen && (
-        <TaskModal
-          person={selectedUser}
-          date={selectedDate}
-          onClose={() => setIsModalOpen(false)}
-          onTaskCreated={handleTaskCreated}
-        />
+        <div className=" h-full w-full bg-[#2e2e2ebf]  top-0 left-0 fixed flex items-center justify-center">
+          
+            <TaskModal
+              person={selectedUser}
+              date={selectedDate}
+              onClose={() => setIsModalOpen(false)}
+              onTaskCreated={handleTaskCreated}
+            />
+          
+        </div>
       )}
     </div>
   );

@@ -60,41 +60,50 @@ export const TaskModal: React.FC<TaskModal> = ({
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2>Add Task for {person}</h2>
-          <button className="close-button" onClick={onClose}>
+      <div className="modal-content  p-8 bg-zinc-200 w-[26vw] rounded-md space-y-8 ">
+        <div className="modal-header flex justify-between">
+          <h2 className="text-2xl font-semibold">Add Task for {person}</h2>
+          <button
+            className="close-button w-7 h-7 font-semibold bg-zinc-300 rounded-full "
+            onClick={onClose}
+          >
             ×
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="task-form">
-          <div className="date-info">
+        <form onSubmit={handleSubmit} className="task-form flex flex-col gap-4">
+          <div className="date-info text-zinc-500">
             Date: {format(new Date(date), "EEEE, MMMM d, yyyy")}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="description">Task Description</label>
+          <div className="form-group flex flex-col gap-3 ">
+            <label htmlFor="description " className="font-semibold">
+              Task Description
+            </label>
             <textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter task details..."
-              className="task-textarea"
+              className="task-textarea outline-none border-2 border-zinc-400 h-30 px-3 py-2 rounded-lg resize-none "
               required
             />
           </div>
 
-          <div className="form-actions">
-            <button type="button" className="cancel-button" onClick={onClose}>
-              Cancel
-            </button>
+          <div className="form-actions flex flex-row-reverse gap-3 ">
             <button
               type="submit"
-              className="submit-button"
+              className="submit-button px-4 py-2 rounded-md bg-black text-white "
               disabled={isSubmitting}
             >
               {isSubmitting ? "Adding..." : "Add Task"}
+            </button>
+            <button
+              type="button"
+              className="cancel-button px-4 py-2 rounded-md border border-zinc-500"
+              onClick={onClose}
+            >
+              Cancel
             </button>
           </div>
         </form>

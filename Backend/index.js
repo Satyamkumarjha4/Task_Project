@@ -40,6 +40,10 @@ async function initializeDatabase() {
         description TEXT NOT NULL,
         status VARCHAR(20) NOT NULL DEFAULT 'not-started',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );CREATE TABLE IF NOT EXISTS Person (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(200) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
     console.log('Database tables initialized');
@@ -49,6 +53,29 @@ async function initializeDatabase() {
 }
 
 // API Routes
+
+
+app.post('/api/person/:person', async (req, res) => {
+  try {
+    const name = req.params.person;
+    
+    const result = await pool.query(`INSERT INTO Person (name) VALUES ($1) RETURNING *`, [name]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.json(error);
+  }
+})
+
+app.get("/api/person", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT name FROM Person`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.json(error);
+  }
+});
 
 // Get all tasks
 app.get('/api/tasks', async (req, res) => {

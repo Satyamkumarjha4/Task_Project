@@ -1,6 +1,6 @@
 // Create a separate types file
 export enum TaskStatus {
-  NOT_STARTED = "not_started",
+  PENDING = "pending",
   IN_PROGRESS = "in_progress",
   COMPLETED = "completed",
 }

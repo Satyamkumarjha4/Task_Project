@@ -3,27 +3,34 @@ import { useState, useEffect } from "react";
 // import { Calendar } from "./components/ui/Calendar";
 
 import { Button } from "./components/ui/button";
-import { PlusCircle, CheckCircle, Circle, MinusCircle } from "lucide-react";
+import {
+  PlusCircle,
+  CheckCircle,
+  Circle,
+  MinusCircle,
+  Trash,
+} from "lucide-react";
 //import { getTasks, updateTaskStatus } from "./app/actions"
 import { format } from "date-fns";
 import { TaskModal } from "./components/TaskModel";
 import { type Task, TaskStatus } from "./types";
 import "./index.css";
 
-
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
-
+import { AddMembers } from "./components/AddMembers";
 
 // Team members
-const teamMembers = ["Komal", "Ankush", "Animesh", "Ashvini", "Nasar"];
 const URL = "http://localhost:1111";
 
 export default function App() {
   const [date, setDate] = useState<Date>(new Date());
+  const [teamMembersState, setTeamMembersState] =
+    useState<{ name: string }[]>();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddMembersOpen, setIsAddMembersOpen] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [visibleDates, setVisibleDates] = useState<string[]>([]);
@@ -47,13 +54,25 @@ export default function App() {
     const fetchTasks = async () => {
       if (visibleDates.length > 0) {
         const response = await axios.get(
-          `${URL}/api/tasks/date/${visibleDates[0]}}`
+          `${URL}/api/tasks/date/${visibleDates[0]}`
         );
-        console.log(response.data);
-        setTasks((prevTask) => [...prevTask, response.data]);
+
+        setTasks((prevTask) => {
+          const mergedTasks = [...prevTask, ...response.data];
+          const updatedTasks = Array.from(
+            new Map(mergedTasks.map((task) => [task.id, task])).values()
+          );
+          return updatedTasks;
+        });
       }
     };
 
+    const fetchMembers = async () => {
+      const response = await axios.get(`${URL}/api/person`);
+      setTeamMembersState(() => [...response.data]);
+    };
+
+    fetchMembers();
     fetchTasks();
   }, [visibleDates]);
 
@@ -68,6 +87,7 @@ export default function App() {
   const handleTaskCreated = (newTask: Task) => {
     setTasks([...tasks, newTask]);
     setIsModalOpen(false);
+    window.location.reload();
   };
 
   // Update task status
@@ -76,33 +96,76 @@ export default function App() {
 
     // Cycle through statuses
     switch (task.status) {
-      case TaskStatus.NOT_STARTED:
+      case TaskStatus.PENDING:
         newStatus = TaskStatus.IN_PROGRESS;
         break;
       case TaskStatus.IN_PROGRESS:
         newStatus = TaskStatus.COMPLETED;
         break;
       case TaskStatus.COMPLETED:
-        newStatus = TaskStatus.NOT_STARTED;
+        newStatus = TaskStatus.PENDING;
         break;
       default:
-        newStatus = TaskStatus.NOT_STARTED;
+        newStatus = TaskStatus.PENDING;
     }
 
-    //const updatedTask = { ...task, status: newStatus }
-    /*const success = await updateTaskStatus(updatedTask.id, newStatus)
-
-    if (success) {
-      setTasks(tasks.map((t) => (t.id === task.id ? updatedTask : t)))
-    }*/
+    const updatedTask = { ...task, status: newStatus };
+    const response = await axios.put(`${URL}/api/tasks/${task.id}`, {
+      status: updatedTask.status,
+      description: updatedTask.description,
+    });
+    window.location.reload();
+    console.log(response);
   };
+  function formatDateToISO(dateStr: string) {
+    try {
+      // If it's already in YYYY-MM-DD format, return as is
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return dateStr;
+      }
+
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        console.error("Invalid date:", dateStr);
+        return null;
+      }
+
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error("Error formatting date:", dateStr, error);
+      return null;
+    }
+  }
 
   // Get tasks for a specific user and date
   const getUserTasks = (person: string, date: string) => {
-    console.log(tasks, date);
-    return tasks.filter(
-      (task) => task.person === person && task.date.substring(0, 11) === date
-    );
+    return tasks.filter((task) => {
+      if (task.person === person && formatDateToISO(task.date) === date) {
+        return task;
+      }
+    });
+  };
+
+  const deleteTask = async (task: Task) => {
+    const response = await axios.delete(`${URL}/api/tasks/${task.id}`);
+    setTasks(() => {
+      return response.data;
+    });
+    window.location.reload();
+  };
+
+  const handleAddMember = async (newMember: string) => {
+    console.log(newMember);
+    await axios.post(`${URL}/api/person/${newMember}`);
+    setIsAddMembersOpen(false);
+    setTeamMembersState((prevMembers) => [
+      ...prevMembers!,
+      { name: newMember },
+    ]);
   };
 
   // Render status icon based on task status
@@ -153,11 +216,11 @@ export default function App() {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
+      <div className="border-collapse rounded-md">
+        <table className="border-collapse border border-zinc-200">
           <thead>
-            <tr className="bg-muted">
-              <th className="border p-3 min-w-[150px] text-left">
+            <tr className="bg-zinc-100">
+              <th className="border p-3 min-w-[100px] text-left">
                 Team Member
               </th>
               {visibleDates.map((date) => (
@@ -168,11 +231,11 @@ export default function App() {
             </tr>
           </thead>
           <tbody>
-            {teamMembers.map((user) => (
-              <tr key={user}>
-                <td className="border p-3 font-medium">{user}</td>
+            {teamMembersState?.map((user) => (
+              <tr key={user.name}>
+                <td className="border p-3 font-semibold">{user.name}</td>
                 {visibleDates.map((date) => {
-                  const userTasks = getUserTasks(user, date);
+                  const userTasks = getUserTasks(user.name, date);
 
                   return (
                     <td
@@ -180,16 +243,16 @@ export default function App() {
                       className="border p-3 align-top"
                     >
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-zinc-600 text-muted-foreground">
                           {userTasks.length} tasks
                         </span>
                         <Button
-                          //variant="ghost"
-                          //size="sm"
-                          onClick={() => handleAddTask(user, date)}
-                          className="h-6 w-6 p-0"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAddTask(user.name, date)}
+                          className="h-6 w-6 p-0 cursor-pointer"
                         >
-                          <PlusCircle className="h-5 w-5" />
+                          <PlusCircle className="h-5 w-5 hover:cursor-pointer" />
                           <span className="sr-only">Add task</span>
                         </Button>
                       </div>
@@ -198,15 +261,23 @@ export default function App() {
                         {userTasks.map((task) => (
                           <div
                             key={task.id}
-                            className="flex items-start gap-2 p-2 rounded bg-muted/50"
+                            className="flex items-center justify-between gap-x-2 p-2 rounded-md bg-zinc-100"
                           >
-                            <button
-                              onClick={() => handleStatusChange(task)}
-                              className="mt-1 flex-shrink-0"
-                            >
-                              {renderStatusIcon(task.status!)}
-                            </button>
-                            <span className="text-sm">{task.description}</span>
+                            <div className="flex items-center gap-x-2">
+                              <button
+                                onClick={() => handleStatusChange(task)}
+                                className="flex-shrink-0 cursor-pointer bg-white rounded-full"
+                              >
+                                {renderStatusIcon(task.status!)}
+                              </button>
+                              <span className="text-sm">
+                                {task.description}
+                              </span>
+                            </div>
+                            <Trash
+                              onClick={() => deleteTask(task)}
+                              className="text-black size-5 cursor-pointer"
+                            />
                           </div>
                         ))}
                       </div>
@@ -217,18 +288,32 @@ export default function App() {
             ))}
           </tbody>
         </table>
+        <button
+          onClick={() => setIsAddMembersOpen(true)}
+          className="px-3 py-1 mt-2 cursor-pointer bg-zinc-100 rounded-lg font-bold"
+        >
+          {" "}
+          + Add Members
+        </button>
       </div>
+      {isAddMembersOpen && (
+        <div className=" h-full w-full bg-[#2e2e2ebf]  top-0 left-0 fixed flex items-center justify-center">
+          <AddMembers
+            person={selectedUser}
+            onClose={() => setIsModalOpen(false)}
+            onAddPerson={handleAddMember}
+          />
+        </div>
+      )}
 
       {isModalOpen && (
         <div className=" h-full w-full bg-[#2e2e2ebf]  top-0 left-0 fixed flex items-center justify-center">
-          
-            <TaskModal
-              person={selectedUser}
-              date={selectedDate}
-              onClose={() => setIsModalOpen(false)}
-              onTaskCreated={handleTaskCreated}
-            />
-          
+          <TaskModal
+            person={selectedUser}
+            date={selectedDate}
+            onClose={() => setIsModalOpen(false)}
+            onTaskCreated={handleTaskCreated}
+          />
         </div>
       )}
     </div>

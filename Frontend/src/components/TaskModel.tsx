@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import axios from "axios";
-import { Task } from "../types";
+import { Task, TaskStatus } from "../types";
 
-const TaskStatus = {
-  PENDING: "pending",
-  IN_PROGRESS: "in_progress",
-  COMPLETED: "completed",
-};
+// const TaskStatus = {
+//   PENDING: "pending",
+//   IN_PROGRESS: "in_progress",
+//   COMPLETED: "completed",
+// };
 
 interface TaskModal extends Task {
   onTaskCreated: (task: Task) => void;
